@@ -1,0 +1,103 @@
+---
+title: "manipulate"
+author: "Adela Belackova"
+date: "23/06/2021"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Read online table
+### Download table (`*.csv`)
+```{r}
+# set variables
+csv_url  <- "https://oceanview.pfeg.noaa.gov/erddap/tabledap/cciea_AC.csv"
+dir_data <- "data"
+
+# derived variables
+csv <- file.path(dir_data, basename(csv_url))
+
+# create directory
+dir.create(dir_data)
+
+# download file
+download.file(csv_url, csv)
+```
+### Read table `read.csv()`
+```{r}
+# attempt to read csv
+d <- read.csv(csv)
+
+# show the data frame
+d
+```
+### Skip second line
+```{r}
+# read csv by skipping first two lines, so no header
+d <- read.csv(csv, skip = 2, header = FALSE)
+d
+
+# update data frame to original column names
+names(d) <- names(read.csv(csv))
+d
+```
+### Show table `DT::datatable()`
+```{r}
+# show table
+DT::datatable(d)
+```
+#equivalent of the following command
+```{r}
+library(DT)
+datatable(d)
+```
+## Wrangle data
+
+### Manipulate with `dplyr`
+```{r}
+library(DT)
+library(dplyr)
+
+d <- d %>% 
+  # tibble
+  tibble() %>% 
+  # mutate time
+  mutate(
+    time = as.Date(substr(time, 1, 10))) %>% 
+  # select columns
+  select(
+    time, 
+    starts_with("total_fisheries_revenue")) %>% 
+  # filter rows
+  filter(
+    time >= as.Date("1981-01-01"))
+
+datatable(d)
+```
+### tidy with tidyr
+```{r}
+library(tidyr)
+
+d <- d %>% 
+  pivot_longer(-protection)
+
+datatable(d)
+```
+### Summarize with dplyr
+```{r}
+library(stringr)
+library(dplyr)
+d <- d %>% 
+  mutate(species = str_replace(name)) %>% 
+  #select(time, region, value)
+datatable(d)
+```
+```{r}
+
+d_sum <- d %>% 
+  group_by(name) %>% 
+  summarize(
+    avg_biomass = mean(value))
+d_sum
+```
+
