@@ -2,7 +2,7 @@
 title: "manipulate"
 author: "Adela Belackova"
 date: "23/06/2021"
-output:
+output:  
   html_document:
     toc: true
     toc_depth: 3
@@ -84,25 +84,55 @@ datatable(d)
 library(tidyr)
 
 d <- d %>% 
-  pivot_longer(-protection)
+  pivot_longer(-time)
 
 datatable(d)
 ```
 ### Summarize with dplyr
 ```{r}
 library(stringr)
-library(dplyr)
+
 d <- d %>% 
-  mutate(species = str_replace(name)) %>% 
-  #select(time, region, value)
+  mutate(
+    region = str_replace(name, "total_fisheries_revenue_", "")) %>% 
+  select(time, region, value)
 datatable(d)
 ```
 ```{r}
-
 d_sum <- d %>% 
-  group_by(name) %>% 
+  group_by(region) %>% 
   summarize(
-    avg_biomass = mean(value))
-d_sum
+    avg_revenue = mean(value))
+datatable(d_sum) %>%
+```
+
+
+```{r}
+formatCurrency("avg_revenue")
+```
+
+### Apply function with purrr on a nest tibble
+```{r}
+library(purrr)
+
+n <- d %>% 
+  group_by(region) %>% 
+  nest(
+    data = c(time, value))
+n
+```
+```{r}
+n <- n %>% 
+  mutate(
+    lm    = map(data, function(d){
+      lm(value ~ time, d) } ),
+    trend = map_dbl(lm, function(m){
+      coef(summary(m))["time","Estimate"] }))
+n
+```
+```{r}
+n %>% 
+  select(region, trend) %>% 
+  datatable()
 ```
 
