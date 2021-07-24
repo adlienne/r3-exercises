@@ -1,0 +1,69 @@
+---
+title: "map"
+author: "Adela Belackova"
+date: "24/07/2021"
+output: html_document
+---
+
+#Install packages
+```{r}
+# require() is like library() except returns FALSE if missing (vs error)
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+# librarian::shelf() is like library() except installs package if missing,
+library(udunits2)
+#   even from Github if include owner/repo
+shelf(
+  NOAA-EDAB/ecodata,
+  sf)
+# librarian before version 1.8.1, got error:
+#   download from 'https://api.github.com/repos/NOAA-EDAB/ecodata/tarball/HEAD' failed
+```
+# Get spatial data
+```{r}
+ecodata::epu_sf
+```
+## Simple feature collection with 4 features and 3 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -77 ymin: 35.8327 xmax: -65.66667 ymax: 44.66667
+## Geodetic CRS:  NAD83
+##   EPU Shape_Leng Shape_Area                       geometry
+## 0  GB   16.33086   6.162033 MULTIPOLYGON (((-66.5 42.16...
+## 1 GOM   32.20684   7.545063 MULTIPOLYGON (((-69.26278 4...
+## 2  SS   20.52712   3.350430 MULTIPOLYGON (((-67.54 44.6...
+## 3 MAB   83.38407  15.695390 MULTIPOLYGON (((-75.97418 3...
+```{r}
+epu_sf <- ecodata::epu_sf %>% 
+  st_transform(4326)
+```
+```{r}
+class(epu_sf)
+```
+```{r}
+# "sf"         "data.frame"
+g1 <- epu_sf$geometry[1]
+# see in Environment pane, expand g1
+```
+
+```{r}
+plot(epu_sf)
+```
+```{r}
+plot(epu_sf["EPU"])
+```
+```{r}
+shelf(mapview)
+mapview(epu_sf)
+```
+```{r}
+shelf(leaflet)
+
+leaflet() %>% 
+  #addTiles() %>%
+  addProviderTiles(providers$Esri.OceanBasemap) %>% 
+  addPolygons(data = epu_sf)
+```
+
